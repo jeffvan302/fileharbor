@@ -1,0 +1,44 @@
+{
+    // Recommended VS Code extensions for FileHarbor development
+    "recommendations": [
+        // Python essentials
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.debugpy",
+        
+        // Testing
+        "littlefoxteam.vscode-python-test-adapter",
+        "hbenl.vscode-test-explorer",
+        
+        // Code quality
+        "ms-python.flake8",
+        "ms-python.mypy-type-checker",
+        
+        // Git
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        
+        // Markdown
+        "yzhang.markdown-all-in-one",
+        "DavidAnson.vscode-markdownlint",
+        
+        // YAML/TOML
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        
+        // JSON
+        "ZainChen.json",
+        
+        // Productivity
+        "usernamehw.errorlens",
+        "streetsidesoftware.code-spell-checker",
+        "wayou.vscode-todo-highlight",
+        
+        // Optional but useful
+        "GitHub.copilot",
+        "visualstudioexptteam.vscodeintellicode",
+        "gruntfuggly.todo-tree"
+    ]
+}

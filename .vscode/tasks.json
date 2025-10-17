@@ -1,0 +1,116 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Install Package (Development Mode)",
+            "type": "shell",
+            "command": "pip install -e .",
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "Run All Tests",
+            "type": "shell",
+            "command": "python run_tests.py",
+            "problemMatcher": [],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run Integration Tests",
+            "type": "shell",
+            "command": "python run_tests.py integration",
+            "problemMatcher": [],
+            "group": "test"
+        },
+        {
+            "label": "Run Security Tests",
+            "type": "shell",
+            "command": "python run_tests.py security",
+            "problemMatcher": [],
+            "group": "test"
+        },
+        {
+            "label": "Run E2E Tests",
+            "type": "shell",
+            "command": "python run_tests.py e2e",
+            "problemMatcher": [],
+            "group": "test"
+        },
+        {
+            "label": "Run Tests with Coverage",
+            "type": "shell",
+            "command": "pytest --cov=fileharbor --cov-report=html --cov-report=term",
+            "problemMatcher": [],
+            "group": "test"
+        },
+        {
+            "label": "Format Code (Black)",
+            "type": "shell",
+            "command": "black src/ tests/ examples/",
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "Sort Imports (isort)",
+            "type": "shell",
+            "command": "isort src/ tests/ examples/",
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "Lint (Flake8)",
+            "type": "shell",
+            "command": "flake8 src/ tests/ examples/ --max-line-length=120",
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "Type Check (mypy)",
+            "type": "shell",
+            "command": "mypy src/fileharbor",
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "Clean Build Artifacts",
+            "type": "shell",
+            "command": "python -c \"import shutil; import os; [shutil.rmtree(p, ignore_errors=True) for p in ['build', 'dist', 'htmlcov', '.pytest_cache', '.mypy_cache'] + [p for p in os.listdir('.') if p.endswith('.egg-info')]]\"",
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "Start FileHarbor Server",
+            "type": "shell",
+            "command": "fileharbor-server server_config.json",
+            "problemMatcher": [],
+            "group": "none",
+            "isBackground": true
+        },
+        {
+            "label": "Open Config Tool",
+            "type": "shell",
+            "command": "fileharbor-config server_config.json",
+            "problemMatcher": [],
+            "group": "none"
+        },
+        {
+            "label": "Run Sync Client Example",
+            "type": "shell",
+            "command": "python examples/sync_client_example.py",
+            "problemMatcher": [],
+            "group": "none"
+        },
+        {
+            "label": "Run Async Client Example",
+            "type": "shell",
+            "command": "python examples/async_client_example.py",
+            "problemMatcher": [],
+            "group": "none"
+        }
+    ]
+}
