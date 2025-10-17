@@ -5,14 +5,13 @@ Optional compression support for file transfers.
 """
 
 import zlib
-from typing import bytes as Bytes
 
 
 # Compression level (0-9, where 9 is maximum compression)
 DEFAULT_COMPRESSION_LEVEL = 6
 
 
-def compress_data(data: Bytes, level: int = DEFAULT_COMPRESSION_LEVEL) -> Bytes:
+def compress_data(data: bytes, level: int = DEFAULT_COMPRESSION_LEVEL) -> bytes:
     """
     Compress data using zlib.
     
@@ -26,7 +25,7 @@ def compress_data(data: Bytes, level: int = DEFAULT_COMPRESSION_LEVEL) -> Bytes:
     return zlib.compress(data, level=level)
 
 
-def decompress_data(compressed_data: Bytes) -> Bytes:
+def decompress_data(compressed_data: bytes) -> bytes:
     """
     Decompress zlib-compressed data.
     
@@ -59,7 +58,7 @@ class CompressedStream:
         self.compressor = zlib.compressobj(level=level)
         self._finalized = False
     
-    def compress(self, data: Bytes) -> Bytes:
+    def compress(self, data: bytes) -> bytes:
         """
         Compress a chunk of data.
         
@@ -73,7 +72,7 @@ class CompressedStream:
             raise ValueError("Stream has been finalized")
         return self.compressor.compress(data)
     
-    def finalize(self) -> Bytes:
+    def finalize(self) -> bytes:
         """
         Finalize compression and get remaining data.
         
@@ -98,7 +97,7 @@ class DecompressedStream:
         self.decompressor = zlib.decompressobj()
         self._finalized = False
     
-    def decompress(self, data: Bytes) -> Bytes:
+    def decompress(self, data: bytes) -> bytes:
         """
         Decompress a chunk of data.
         
@@ -112,7 +111,7 @@ class DecompressedStream:
             raise ValueError("Stream has been finalized")
         return self.decompressor.decompress(data)
     
-    def finalize(self) -> Bytes:
+    def finalize(self) -> bytes:
         """
         Finalize decompression and get remaining data.
         

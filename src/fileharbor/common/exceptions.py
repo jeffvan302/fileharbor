@@ -70,6 +70,10 @@ class TransferError(FileHarborException):
     pass
 
 
+# Alias for backwards compatibility
+FileTransferError = TransferError
+
+
 class ChecksumMismatchError(TransferError):
     """Raised when file checksum validation fails."""
     

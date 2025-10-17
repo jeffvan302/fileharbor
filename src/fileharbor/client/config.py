@@ -11,7 +11,7 @@ from typing import Optional
 
 from fileharbor.common.config_schema import ClientConfig, load_config_from_file
 from fileharbor.common.exceptions import ConfigurationError, DecryptionError
-from fileharbor.config_tool.encryption import is_encrypted, decrypt_config_file
+from fileharbor.config_tool.encryption import is_config_encrypted, decrypt_config_file
 
 
 def load_client_config(config_path: str, password: Optional[str] = None) -> ClientConfig:
@@ -36,7 +36,7 @@ def load_client_config(config_path: str, password: Optional[str] = None) -> Clie
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
     
     # Check if encrypted
-    if is_encrypted(str(config_path)):
+    if is_config_encrypted(str(config_path)):
         if password is None:
             password = getpass.getpass("Enter configuration password: ")
         

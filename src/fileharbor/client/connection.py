@@ -16,7 +16,6 @@ from fileharbor.common.protocol import (
     MessageHeader,
     create_handshake_request,
     create_response,
-    parse_response,
     MESSAGE_HEADER_SIZE,
 )
 from fileharbor.common.constants import (

@@ -16,6 +16,9 @@ from fileharbor.common.constants import (
     PROTOCOL_VERSION,
     STATUS_SUCCESS,
     STATUS_INTERNAL_ERROR,
+    CMD_HANDSHAKE,
+    CMD_PUT_START,
+    CMD_GET_START,
 )
 from fileharbor.common.exceptions import ProtocolError, InvalidMessageError
 
@@ -281,6 +284,76 @@ def create_data_message(command: str, data: bytes) -> Tuple[Message, bytes]:
 
 
 # ============================================================================
+# Convenience Request Creation Functions
+# ============================================================================
+
+def create_handshake_request(library_id: str, client_capabilities: dict) -> Message:
+    """
+    Create a handshake request message.
+    
+    Args:
+        library_id: Library identifier
+        client_capabilities: Dictionary of client capabilities
+        
+    Returns:
+        Message instance
+    """
+    return create_request(
+        CMD_HANDSHAKE,
+        library_id=library_id,
+        client_capabilities=client_capabilities
+    )
+
+
+def create_put_start_request(
+    filepath: str,
+    file_size: int,
+    checksum: str,
+    chunk_size: int,
+    resume: bool = False
+) -> Message:
+    """
+    Create a PUT_START request message.
+    
+    Args:
+        filepath: Remote file path
+        file_size: Size of file in bytes
+        checksum: File checksum
+        chunk_size: Transfer chunk size
+        resume: Whether to resume interrupted transfer
+        
+    Returns:
+        Message instance
+    """
+    return create_request(
+        CMD_PUT_START,
+        filepath=filepath,
+        file_size=file_size,
+        checksum=checksum,
+        chunk_size=chunk_size,
+        resume=resume
+    )
+
+
+def create_get_start_request(filepath: str, offset: int = 0) -> Message:
+    """
+    Create a GET_START request message.
+    
+    Args:
+        filepath: Remote file path
+        offset: Byte offset to start download from (for resume)
+        
+    Returns:
+        Message instance
+    """
+    return create_request(
+        CMD_GET_START,
+        filepath=filepath,
+        offset=offset
+    )
+
+
+# ============================================================================
 # Protocol Helper Functions
 # ============================================================================
 
@@ -361,6 +434,13 @@ class PutStartRequest:
 
 
 @dataclass
+class PutStartResponse:
+    """Response to PUT_START request."""
+    temp_filepath: str
+    resume_offset: int = 0
+
+
+@dataclass
 class PutChunkRequest:
     """Upload a file chunk."""
     filepath: str
@@ -375,6 +455,14 @@ class GetStartRequest:
     filepath: str
     offset: int = 0
     chunk_size: Optional[int] = None
+
+
+@dataclass
+class GetStartResponse:
+    """Response to GET_START request."""
+    file_size: int
+    checksum: str
+    chunk_size: int
 
 
 @dataclass
@@ -411,6 +499,16 @@ def parse_put_start_request(message: Message) -> PutStartRequest:
     return PutStartRequest(**message.content)
 
 
+def parse_put_start_response(message: Message) -> PutStartResponse:
+    """Parse PUT_START response from message."""
+    return PutStartResponse(**message.content)
+
+
 def parse_get_start_request(message: Message) -> GetStartRequest:
     """Parse GET_START request from message."""
     return GetStartRequest(**message.content)
+
+
+def parse_get_start_response(message: Message) -> GetStartResponse:
+    """Parse GET_START response from message."""
+    return GetStartResponse(**message.content)
