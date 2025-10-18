@@ -42,7 +42,15 @@ def load_client_config(config_path: str, password: Optional[str] = None) -> Clie
         
         # Decrypt and parse
         try:
-            config_json = decrypt_config_file(str(config_path), password)
+            # Read encrypted file
+            with open(config_path, 'rb') as f:
+                encrypted_data = f.read()
+            
+            # Decrypt in-memory
+            from fileharbor.common.crypto import decrypt_data
+            decrypted_data = decrypt_data(encrypted_data, password)
+            config_json = decrypted_data.decode('utf-8')
+            
             config_data = json.loads(config_json)
             config = ClientConfig.from_dict(config_data)
         except Exception as e:

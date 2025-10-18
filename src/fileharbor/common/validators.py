@@ -48,24 +48,29 @@ def validate_path(filepath: str, base_path: str) -> str:
     # Remove leading slashes from filepath to make it relative
     filepath = filepath.lstrip('/')
     
+    # Handle empty path (root directory request)
+    if not filepath or filepath == '':
+        filepath = '.'
+    
     # Normalize the filepath
     try:
         filepath = os.path.normpath(filepath)
     except Exception as e:
         raise InvalidPathError(f"Invalid path format: {e}")
     
-    # Check for forbidden path components
+    # Check for forbidden path components (skip if it's just "." for root)
     path_parts = filepath.split(os.sep)
-    for part in path_parts:
-        if part in FORBIDDEN_PATH_COMPONENTS:
-            raise PathTraversalError(filepath)
-        
-        # Check for forbidden characters in each component
-        for forbidden_char in FORBIDDEN_FILENAME_CHARS:
-            if forbidden_char in part:
-                raise InvalidPathError(
-                    f"Path contains forbidden character: {repr(forbidden_char)}"
-                )
+    if not (len(path_parts) == 1 and path_parts[0] == '.'):
+        for part in path_parts:
+            if part in FORBIDDEN_PATH_COMPONENTS:
+                raise PathTraversalError(filepath)
+            
+            # Check for forbidden characters in each component
+            for forbidden_char in FORBIDDEN_FILENAME_CHARS:
+                if forbidden_char in part:
+                    raise InvalidPathError(
+                        f"Path contains forbidden character: {repr(forbidden_char)}"
+                    )
     
     # Check path depth
     if len(path_parts) > MAX_PATH_DEPTH:

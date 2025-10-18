@@ -4,14 +4,12 @@ FileHarbor Server Configuration Loader
 Loads and validates server configuration from file.
 """
 
-import json
-import getpass
 from pathlib import Path
 from typing import Optional
 
 from fileharbor.common.config_schema import ServerConfig, load_config_from_file
 from fileharbor.common.exceptions import ConfigurationError, DecryptionError
-from fileharbor.config_tool.encryption import is_config_encrypted, decrypt_config_file
+from fileharbor.config_tool.encryption import load_config_with_password
 
 
 def load_server_config(config_path: str, password: Optional[str] = None) -> ServerConfig:
@@ -35,26 +33,15 @@ def load_server_config(config_path: str, password: Optional[str] = None) -> Serv
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
     
-    # Check if encrypted
-    if is_config_encrypted(str(config_path)):
-        print("🔒 Configuration file is encrypted")
-        
-        if password is None:
-            password = getpass.getpass("Enter configuration password: ")
-        
-        # Decrypt and parse
-        try:
-            config_json = decrypt_config_file(str(config_path), password)
-            config_data = json.loads(config_json)
-            config = ServerConfig.from_dict(config_data)
-        except Exception as e:
-            raise DecryptionError(f"Failed to decrypt configuration: {e}")
-    else:
-        # Load plain config
-        try:
-            config = load_config_from_file(str(config_path), ServerConfig)
-        except Exception as e:
-            raise ConfigurationError(f"Failed to load configuration: {e}")
+    # Load configuration (handles both encrypted and plain)
+    try:
+        config_data = load_config_with_password(str(config_path), password)
+        config = ServerConfig.from_dict(config_data)
+    except DecryptionError:
+        # Re-raise decryption errors as-is
+        raise
+    except Exception as e:
+        raise ConfigurationError(f"Failed to load configuration: {e}")
     
     # Validate configuration
     errors = config.validate()
