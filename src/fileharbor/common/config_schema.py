@@ -65,6 +65,7 @@ class ClientRecord:
     certificate: str  # PEM format
     created: str  # ISO 8601 timestamp
     revoked: bool = False
+    private_key: str = ""  # PEM format - stored for client export
 
 
 @dataclass

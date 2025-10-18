@@ -73,6 +73,10 @@ def validate_client_config(config: ClientConfig) -> None:
     Raises:
         ConfigurationError: If validation fails
     """
+    # Validate server configuration exists
+    if not config.server:
+        raise ConfigurationError("Server configuration is required")
+    
     # Validate server address
     if not config.server.host:
         raise ConfigurationError("Server host is required")
@@ -80,16 +84,21 @@ def validate_client_config(config: ClientConfig) -> None:
     if config.server.port <= 0 or config.server.port > 65535:
         raise ConfigurationError(f"Invalid server port: {config.server.port}")
     
-    # Validate certificate
-    if not config.security.certificate:
-        raise ConfigurationError("Client certificate is required")
-    
-    if not config.security.private_key:
-        raise ConfigurationError("Client private key is required")
-    
-    if not config.security.ca_certificate:
+    # Validate CA certificate
+    if not config.server.ca_certificate:
         raise ConfigurationError("CA certificate is required")
     
+    # Validate client configuration exists
+    if not config.client:
+        raise ConfigurationError("Client configuration is required")
+    
+    # Validate client certificate and key
+    if not config.client.certificate:
+        raise ConfigurationError("Client certificate is required")
+    
+    if not config.client.private_key:
+        raise ConfigurationError("Client private key is required")
+    
     # Validate library ID
-    if not config.library_id:
+    if not config.client.library_id:
         raise ConfigurationError("Library ID is required")

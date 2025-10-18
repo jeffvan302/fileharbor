@@ -129,25 +129,31 @@ class ClientConfigExporter:
     
     def _get_client_private_key(self, client_id: str) -> str:
         """
-        Get client private key.
-        
-        Note: In a real implementation, private keys would be stored separately
-        or generated on-demand. For this implementation, we'll generate a warning
-        that the private key needs to be provided separately.
+        Get client private key from server configuration.
         
         Args:
             client_id: Client UUID
             
         Returns:
-            Private key PEM or placeholder message
+            Private key PEM string
+            
+        Raises:
+            ConfigurationError: If client not found or private key not available
         """
-        # In a real implementation, you would either:
-        # 1. Store private keys separately (not recommended for security)
-        # 2. Generate them on-demand during certificate creation
-        # 3. Have the user provide them
+        if client_id not in self.server_config.clients:
+            raise ConfigurationError(f"Client not found: {client_id}")
         
-        # For now, we'll return a placeholder that indicates the key needs to be provided
-        return "[PRIVATE_KEY_PLACEHOLDER - Must be provided from certificate generation]"
+        client = self.server_config.clients[client_id]
+        
+        # Check if private key is available
+        if not client.private_key:
+            raise ConfigurationError(
+                f"Private key not found for client '{client.name}'. "
+                "The certificate may have been created before private key storage was implemented, "
+                "or the private key was not saved during certificate generation."
+            )
+        
+        return client.private_key
     
     def list_exportable_clients(self, library_id: str) -> list:
         """

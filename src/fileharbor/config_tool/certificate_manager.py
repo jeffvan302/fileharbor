@@ -106,12 +106,13 @@ class CertificateManager:
             client_cert_pem = certificate_to_pem(client_cert)
             client_key_pem = private_key_to_pem(client_key)
             
-            # Create client record
+            # Create client record (includes private key for export)
             client_record = ClientRecord(
                 name=client_name,
                 certificate=client_cert_pem,
                 created=datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                revoked=False
+                revoked=False,
+                private_key=client_key_pem  # Store for client config export
             )
             
             return client_id, client_cert_pem, client_key_pem, client_record

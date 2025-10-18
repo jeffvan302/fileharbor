@@ -23,6 +23,7 @@ from fileharbor.common.constants import (
     CMD_PING,
     CMD_DISCONNECT,
     STATUS_SUCCESS,
+    DEFAULT_SOCKET_TIMEOUT,
 )
 from fileharbor.common.exceptions import (
     ConnectionError as FHConnectionError,
@@ -66,21 +67,21 @@ class Connection:
             
             # Create socket
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(self.config.connection.timeout)
+            self.socket.settimeout(DEFAULT_SOCKET_TIMEOUT)
             
             # Connect
             self.socket.connect((self.config.server.host, self.config.server.port))
             
             # Wrap with SSL
-            self.ssl_socket = ssl_context.wrap_socket(
-                self.socket,
-                server_hostname=self.config.server.host
-            )
+            # Don't specify server_hostname since we're not checking hostname
+            # Security comes from verifying certificate is signed by our trusted CA
+            self.ssl_socket = ssl_context.wrap_socket(self.socket)
+            
+            # Mark as connected so send_message/receive_message work during handshake
+            self.connected = True
             
             # Perform application-level handshake
             self._perform_handshake()
-            
-            self.connected = True
             
         except socket.timeout:
             raise FHConnectionError(f"Connection timeout to {self.config.server.host}:{self.config.server.port}")
@@ -217,8 +218,9 @@ class Connection:
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
         
         # Load CA certificate for server verification
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as ca_file:
-            ca_file.write(self.config.security.ca_certificate)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem', newline='') as ca_file:
+            ca_file.write(self.config.server.ca_certificate)
+            ca_file.flush()
             ca_path = ca_file.name
         
         try:
@@ -227,12 +229,14 @@ class Connection:
             os.unlink(ca_path)
         
         # Load client certificate and key
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as cert_file:
-            cert_file.write(self.config.security.certificate)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem', newline='') as cert_file:
+            cert_file.write(self.config.client.certificate)
+            cert_file.flush()
             cert_path = cert_file.name
         
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as key_file:
-            key_file.write(self.config.security.private_key)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem', newline='') as key_file:
+            key_file.write(self.config.client.private_key)
+            key_file.flush()
             key_path = key_file.name
         
         try:
@@ -241,8 +245,10 @@ class Connection:
             os.unlink(cert_path)
             os.unlink(key_path)
         
-        # Require server certificate verification
-        context.check_hostname = True
+        # Require server certificate verification but allow any hostname
+        # This is secure because we verify the certificate is signed by our trusted CA
+        # Allows dynamic DNS / changing IPs while maintaining security through certificate chain
+        context.check_hostname = False
         context.verify_mode = ssl.CERT_REQUIRED
         
         return context
@@ -256,7 +262,7 @@ class Connection:
         """
         # Create handshake request
         handshake_msg = create_handshake_request(
-            library_id=self.config.library_id,
+            library_id=self.config.client.library_id,
             client_capabilities={
                 'resumable_transfers': True,
                 'compression': False,

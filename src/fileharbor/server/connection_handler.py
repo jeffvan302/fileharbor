@@ -46,6 +46,7 @@ from fileharbor.common.constants import (
     STATUS_INTERNAL_ERROR,
     STATUS_LOCKED,
     MESSAGE_HEADER_SIZE,
+    DEFAULT_CHUNK_SIZE,
 )
 from fileharbor.common.exceptions import (
     FileHarborException,
@@ -415,11 +416,15 @@ class ConnectionHandler:
             
             self.logger.info(f"📥 Download started: {req.filepath} ({file_size} bytes)")
             
+            # Determine chunk size (use client's preference or default)
+            chunk_size = req.chunk_size if req.chunk_size else DEFAULT_CHUNK_SIZE
+            
             # Send response
             response = create_response(
                 CMD_GET_START,
                 file_size=file_size,
-                checksum=checksum
+                checksum=checksum,
+                chunk_size=chunk_size
             )
             self._send_message(response)
             

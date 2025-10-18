@@ -42,8 +42,8 @@ class MessageHeader:
     - Content Length: 8 bytes (uint64)
     - Status Code: 4 bytes (int32)
     - Flags: 4 bytes (reserved for future use)
-    - Checksum: 32 bytes (SHA-256 of content)
-    - Reserved: 880 bytes (padding for future extensions)
+    - Checksum: 64 bytes (SHA-256 hex digest of content)
+    - Reserved: 848 bytes (padding for future extensions)
     """
     version: str = PROTOCOL_VERSION
     message_type: str = MessageType.REQUEST.value
@@ -62,14 +62,14 @@ class MessageHeader:
         """
         # Pack structured data
         header = struct.pack(
-            '16s16s64sQII32s880s',
+            '16s16s64sQII64s848s',
             self.version.encode(MESSAGE_ENCODING)[:16],
             self.message_type.encode(MESSAGE_ENCODING)[:16],
             self.command.encode(MESSAGE_ENCODING)[:64],
             self.content_length,
             self.status_code,
             self.flags,
-            self.checksum.encode(MESSAGE_ENCODING)[:32],
+            self.checksum.encode(MESSAGE_ENCODING)[:64],
             b'',  # Reserved space
         )
         
@@ -95,7 +95,7 @@ class MessageHeader:
             )
         
         try:
-            unpacked = struct.unpack('16s16s64sQII32s880s', data)
+            unpacked = struct.unpack('16s16s64sQII64s848s', data)
             
             return cls(
                 version=unpacked[0].decode(MESSAGE_ENCODING).rstrip('\x00'),
@@ -410,7 +410,7 @@ class HandshakeRequest:
     """Handshake request from client."""
     library_id: str
     protocol_version: str = PROTOCOL_VERSION
-    client_info: Dict[str, str] = field(default_factory=dict)
+    client_capabilities: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

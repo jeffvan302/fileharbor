@@ -219,7 +219,8 @@ class ServerConfigEditor:
                 name=name,
                 certificate=certificate,
                 created=datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                revoked=False
+                revoked=False,
+                private_key=""  # No private key when certificate is provided manually
             )
             
             self.config.clients[client_id] = client_record
