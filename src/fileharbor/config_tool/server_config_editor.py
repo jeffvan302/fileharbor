@@ -318,6 +318,50 @@ class ServerConfigEditor:
         
         return sorted(clients, key=lambda x: x[1])  # Sort by name
     
+    def get_client_rate_limit(self, client_id: str) -> int:
+        """
+        Get rate limit for a client.
+        
+        Args:
+            client_id: Client UUID
+            
+        Returns:
+            Rate limit in bytes per second (0 = unlimited)
+            
+        Raises:
+            ValueError: If client not found
+        """
+        if client_id not in self.config.clients:
+            raise ValueError(f"Client not found: {client_id}")
+        
+        return self.config.clients[client_id].rate_limit_bps
+    
+    def set_client_rate_limit(self, client_id: str, rate_limit_bps: int) -> None:
+        """
+        Set rate limit for a client.
+        
+        Args:
+            client_id: Client UUID
+            rate_limit_bps: Rate limit in bytes per second (0 = unlimited)
+            
+        Raises:
+            ValueError: If client not found or rate limit invalid
+        """
+        if client_id not in self.config.clients:
+            raise ValueError(f"Client not found: {client_id}")
+        
+        if rate_limit_bps < 0:
+            raise ValueError("Rate limit cannot be negative")
+        
+        from fileharbor.common.constants import MIN_RATE_LIMIT
+        if rate_limit_bps > 0 and rate_limit_bps < MIN_RATE_LIMIT:
+            raise ValueError(
+                f"Rate limit must be at least {MIN_RATE_LIMIT} bytes/sec "
+                f"({MIN_RATE_LIMIT / 1024:.1f} KB/s) or 0 (unlimited)"
+            )
+        
+        self.config.clients[client_id].rate_limit_bps = rate_limit_bps
+    
     # ========================================================================
     # Library-Client Access Management
     # ========================================================================

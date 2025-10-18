@@ -121,6 +121,20 @@ class ServerAuthenticator:
             return self.config.clients[client_id].name
         return "Unknown"
     
+    def get_client_rate_limit(self, client_id: str) -> int:
+        """
+        Get rate limit for client.
+        
+        Args:
+            client_id: Client UUID
+            
+        Returns:
+            Rate limit in bytes per second (0 = unlimited)
+        """
+        if client_id in self.config.clients:
+            return self.config.clients[client_id].rate_limit_bps
+        return 0  # Unlimited if client not found
+    
     def get_library_config(self, library_id: str):
         """
         Get library configuration.

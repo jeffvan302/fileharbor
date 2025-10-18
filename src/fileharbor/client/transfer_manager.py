@@ -77,17 +77,20 @@ class TransferManager:
         
         # Get file info
         file_size = get_file_size(local_file)
-        checksum = calculate_file_checksum(local_file)
         modified_time = get_file_mtime(local_file)
         created_time = get_file_ctime(local_file)
         
-        # Create progress tracker
+        # Create progress tracker BEFORE checksum calculation
+        # Total operation = checksum calculation + upload
         tracker = ProgressTracker(
             filepath=remote_path,
-            total_bytes=file_size,
+            total_bytes=file_size * 2,  # Count file twice: once for checksum, once for upload
             operation='upload',
             callback=progress_callback
         )
+        
+        # Calculate checksum with progress tracking
+        checksum = self._calculate_checksum_with_progress(local_file, file_size, tracker)
         
         # Start upload
         put_start_msg = create_put_start_request(
@@ -105,9 +108,9 @@ class TransferManager:
         temp_filepath = put_start_resp.temp_filepath
         resume_offset = put_start_resp.resume_offset
         
-        # Update tracker if resuming
+        # Update tracker if resuming (add to existing checksum progress)
         if resume_offset > 0:
-            tracker.bytes_transferred = resume_offset
+            tracker.update(resume_offset)
         
         # Upload chunks
         with open(local_file, 'rb') as f:
@@ -340,3 +343,35 @@ class TransferManager:
         
         # All retries failed
         raise FileTransferError(f"Download failed after {max_retries} attempts: {last_error}")
+    
+    def _calculate_checksum_with_progress(
+        self,
+        filepath: Path,
+        file_size: int,
+        tracker: ProgressTracker
+    ) -> str:
+        """
+        Calculate file checksum with progress updates.
+        
+        Args:
+            filepath: Path to file
+            file_size: Size of file
+            tracker: Progress tracker to update
+            
+        Returns:
+            SHA-256 checksum hex string
+        """
+        import hashlib
+        from fileharbor.common.constants import CHECKSUM_BUFFER_SIZE
+        
+        sha256_hash = hashlib.sha256()
+        
+        with open(filepath, 'rb') as f:
+            while True:
+                chunk = f.read(CHECKSUM_BUFFER_SIZE)
+                if not chunk:
+                    break
+                sha256_hash.update(chunk)
+                tracker.update(len(chunk))
+        
+        return sha256_hash.hexdigest()

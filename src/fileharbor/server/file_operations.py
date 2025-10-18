@@ -447,9 +447,8 @@ class FileOperationHandler:
         if not is_directory:
             try:
                 size = get_file_size(file_path)
-                # Only calculate checksum for files < 100MB
-                if size < 100 * 1024 * 1024:
-                    checksum = calculate_file_checksum(file_path)
+                # Calculate checksum for all files (manifest requirement)
+                checksum = calculate_file_checksum(file_path)
             except (OSError, FileNotFoundError):
                 pass
         

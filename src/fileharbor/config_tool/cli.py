@@ -547,6 +547,7 @@ class FileHarborConfigTool:
             MenuItem("Add Client", action=self._add_client),
             MenuItem("Remove Client", action=self._remove_client),
             MenuItem("Revoke Client Certificate", action=self._revoke_client),
+            MenuItem("Set Client Rate Limit", action=self._set_client_rate_limit),
             MenuItem("Back", action=lambda: 'back'),
         ])
         
@@ -561,10 +562,20 @@ class FileHarborConfigTool:
         if not clients:
             print("No clients configured.")
         else:
+            # Add rate limit information
+            rows = []
+            for client_id, name, revoked, lib_count in clients:
+                rate_limit = self.editor.get_client_rate_limit(client_id)
+                if rate_limit == 0:
+                    rate_str = "Unlimited"
+                else:
+                    rate_str = f"{rate_limit / (1024 * 1024):.2f} MB/s"
+                
+                rows.append([name, "Yes" if revoked else "No", str(lib_count), rate_str])
+            
             Menu.display_table(
-                ["Name", "Revoked", "Libraries"],
-                [[name, "Yes" if revoked else "No", str(lib_count)]
-                 for _, name, revoked, lib_count in clients]
+                ["Name", "Revoked", "Libraries", "Rate Limit"],
+                rows
             )
         
         Menu.pause()
@@ -658,6 +669,78 @@ class FileHarborConfigTool:
             Menu.display_success("Client certificate revoked successfully!")
         except Exception as e:
             Menu.display_error(f"Failed to revoke client: {e}")
+        
+        Menu.pause()
+    
+    def _set_client_rate_limit(self) -> None:
+        """Set rate limit for a client."""
+        Menu.display_header("Set Client Rate Limit")
+        
+        clients = self.editor.list_clients()
+        
+        if not clients:
+            Menu.display_warning("No clients configured.")
+            Menu.pause()
+            return
+        
+        # Select client
+        choices = [(client_id, f"{name} ({'Revoked' if revoked else 'Active'})")
+                   for client_id, name, revoked, _ in clients]
+        
+        index = Menu.prompt_choice_from_list("Select client:", choices)
+        
+        if index is None:
+            return
+        
+        client_id = choices[index][0]
+        client_name = self.config.clients[client_id].name
+        
+        # Get current rate limit
+        current_rate = self.editor.get_client_rate_limit(client_id)
+        if current_rate == 0:
+            current_str = "unlimited"
+        else:
+            current_str = f"{current_rate / (1024 * 1024):.2f} MB/s"
+        
+        print(f"\nCurrent rate limit: {current_str}")
+        print("\nEnter new rate limit:")
+        print("  - Enter 0 for unlimited")
+        print("  - Enter value in KB/s (e.g., 1024 for 1 MB/s)")
+        print("  - Minimum: 1 KB/s (1024 bytes/s)")
+        
+        try:
+            rate_input = input("\nRate limit (KB/s): ").strip()
+            
+            if not rate_input:
+                Menu.display_warning("Cancelled.")
+                Menu.pause()
+                return
+            
+            rate_kbps = float(rate_input)
+            
+            if rate_kbps < 0:
+                Menu.display_error("Rate limit cannot be negative.")
+                Menu.pause()
+                return
+            
+            # Convert KB/s to bytes/s
+            rate_bps = int(rate_kbps * 1024)
+            
+            # Set the rate limit
+            self.editor.set_client_rate_limit(client_id, rate_bps)
+            self.modified = True
+            
+            if rate_bps == 0:
+                display_rate = "unlimited"
+            else:
+                display_rate = f"{rate_bps / (1024 * 1024):.2f} MB/s ({rate_kbps:.0f} KB/s)"
+            
+            Menu.display_success(f"Rate limit for '{client_name}' set to: {display_rate}")
+            
+        except ValueError as e:
+            Menu.display_error(f"Invalid input: {e}")
+        except Exception as e:
+            Menu.display_error(f"Failed to set rate limit: {e}")
         
         Menu.pause()
     

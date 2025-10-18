@@ -66,6 +66,7 @@ class ClientRecord:
     created: str  # ISO 8601 timestamp
     revoked: bool = False
     private_key: str = ""  # PEM format - stored for client export
+    rate_limit_bps: int = DEFAULT_RATE_LIMIT  # Per-client rate limit (0 = unlimited)
 
 
 @dataclass

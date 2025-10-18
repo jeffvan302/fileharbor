@@ -238,8 +238,33 @@ class ConnectionHandler:
             self.file_handler = FileOperationHandler(library_path)
             
             # Setup rate limiter
-            rate_limit = self.library_manager.get_rate_limit(self.library_id)
-            self.rate_limiter = RateLimiter(rate_limit)
+            # Use the minimum of client and library rate limits
+            # (0 = unlimited, so handle that case specially)
+            client_rate_limit = self.authenticator.get_client_rate_limit(self.client_id)
+            library_rate_limit = self.library_manager.get_rate_limit(self.library_id)
+            
+            # Determine effective rate limit
+            if client_rate_limit == 0 and library_rate_limit == 0:
+                # Both unlimited
+                effective_rate_limit = 0
+            elif client_rate_limit == 0:
+                # Client unlimited, use library limit
+                effective_rate_limit = library_rate_limit
+            elif library_rate_limit == 0:
+                # Library unlimited, use client limit
+                effective_rate_limit = client_rate_limit
+            else:
+                # Both have limits, use the smaller one
+                effective_rate_limit = min(client_rate_limit, library_rate_limit)
+            
+            self.rate_limiter = RateLimiter(effective_rate_limit)
+            
+            if effective_rate_limit > 0:
+                self.logger.debug(
+                    f"📊 Rate limit: {effective_rate_limit / 1024 / 1024:.2f} MB/s "
+                    f"(client: {client_rate_limit / 1024 / 1024 if client_rate_limit > 0 else 'unlimited'}, "
+                    f"library: {library_rate_limit / 1024 / 1024 if library_rate_limit > 0 else 'unlimited'})"
+                )
             
             self.authenticated = True
             
@@ -524,8 +549,10 @@ class ConnectionHandler:
                 {
                     'path': f.path,
                     'size': f.size,
+                    'checksum': f.checksum,
                     'is_directory': f.is_directory,
                     'modified_time': f.modified_time,
+                    'created_time': f.created_time,
                 }
                 for f in files
             ]
